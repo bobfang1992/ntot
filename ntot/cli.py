@@ -1,7 +1,10 @@
-from venv import EnvBuilder
-import click
+import asyncio
 
-from ntot.notion import get_all_pages, pretty_print_pages, enrich_page
+import click
+import httpx
+
+from ntot.notion import (NotionClient, get_default_auth_token,
+                         pretty_print_pages)
 
 
 @click.group()
@@ -11,19 +14,16 @@ def command_handler(dry_run):
 
 
 @command_handler.command()
-@click.pass_context
-def list_notion_pages(ctx):
-    print("get_all_pages")
-    print(pretty_print_pages(get_all_pages()))
+def print_all_pages():
+    print("print_all_pages")
 
+    async def run():
+        async with httpx.AsyncClient() as client:
+            notion = NotionClient(get_default_auth_token())
+            pages = await notion.get_all_pages(client)
+            pretty_print_pages(pages)
 
-@command_handler.command()
-@click.pass_context
-@click.option("--page-id", "-p", help="Page id", required=True)
-def get_page_content(ctx, page_id):
-    print("get_page_content")
-    result = enrich_page(page_id)
-    print(result)
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
